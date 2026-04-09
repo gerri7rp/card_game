@@ -5,19 +5,15 @@
 </head>
 <body>
 
-<h2>Create Room</h2>
+<h2>Create or Join Room</h2>
 
 <form method="POST">
+    <input name="username" placeholder="Your username" required>
     <input name="room" placeholder="Room name" required>
     <input name="password" type="password" placeholder="Password" required>
 
-    <button name="action" value="create">
-        Create Room
-    </button>
-
-    <button name="action" value="join">
-        Join Room
-    </button>
+    <button name="action" value="create">Create Room</button>
+    <button name="action" value="join">Join Room</button>
 </form>
 
 </body>
