@@ -2,19 +2,58 @@
 <html>
 <head>
     <title>Chat Rooms</title>
+    <style>
+        #createForm, #joinForm {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
 
-<h2>Create or Join Room</h2>
+<h2>Welcome to the Chat</h2>
 
-<form method="POST">
-    <input name="username" placeholder="Your username" required>
-    <input name="room" placeholder="Room name" required>
-    <input name="password" type="password" placeholder="Password" required>
+<button onclick="showCreate()">Create Room</button>
+<button onclick="showJoin()">Join Room</button>
 
-    <button name="action" value="create">Create Room</button>
-    <button name="action" value="join">Join Room</button>
-</form>
+<!-- Crear sala -->
+<div id="createForm">
+    <h3>Create Room</h3>
+    <form method="POST">
+        <input type="hidden" name="action" value="create">
+        <input name="username" placeholder="Your username" required><br>
+        <input name="room" placeholder="Room name" required><br>
+        <input name="password" type="password" placeholder="Password" required><br>
+        <button type="submit">Create Room</button>
+    </form>
+</div>
+
+<!-- Unirse a sala -->
+<div id="joinForm">
+    <h3>Join Room</h3>
+    <form method="POST">
+        <input type="hidden" name="action" value="join">
+        <input name="username" placeholder="Your username" required><br>
+        <select name="room" required>
+            {% for room in rooms %}
+                <option value="{{ room }}">{{ room }}</option>
+            {% endfor %}
+        </select><br>
+        <input name="password" type="password" placeholder="Password" required><br>
+        <button type="submit">Join Room</button>
+    </form>
+</div>
+
+<script>
+function showCreate() {
+    document.getElementById('createForm').style.display = 'block';
+    document.getElementById('joinForm').style.display = 'none';
+}
+function showJoin() {
+    document.getElementById('createForm').style.display = 'none';
+    document.getElementById('joinForm').style.display = 'block';
+}
+</script>
 
 </body>
 </html>

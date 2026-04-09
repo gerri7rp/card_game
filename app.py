@@ -5,7 +5,6 @@ import os
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
-
 socketio = SocketIO(app)
 
 ROOMS_FILE = "rooms.json"
@@ -25,13 +24,13 @@ def index():
     rooms = load_rooms()
 
     if request.method == "POST":
+        action = request.form.get("action")
         username = request.form.get("username").strip()
         room = request.form.get("room").strip()
         password = request.form.get("password")
-        action = request.form.get("action")
 
         if not username:
-            return "Username is required"
+            return "Username required"
 
         if action == "create":
             if room in rooms:
@@ -45,12 +44,12 @@ def index():
             if rooms[room] != password:
                 return "Wrong password"
 
-        # Guardar usuario y sala en sesión
-        session["room"] = room
         session["username"] = username
+        session["room"] = room
         return redirect("/chat")
 
-    return render_template("index.html")
+    # Para GET, mostrar la lista de salas en el joinForm
+    return render_template("index.html", rooms=rooms.keys())
 
 @app.route("/chat")
 def chat():
