@@ -16,19 +16,23 @@
 
 <script>
 var socket = io();
-socket.emit("join");
 
-socket.on("message", function(msg) {
+// Unirse a la sala pasando datos directamente
+socket.emit("join", {username: "{{ username }}", room: "{{ room }}"});
+
+// Recibir mensajes
+socket.on("message", function(msg){
     var box = document.getElementById("chat-box");
     var p = document.createElement("p");
     p.innerText = msg;
     box.appendChild(p);
 });
 
-function sendMessage() {
+// Enviar mensaje
+function sendMessage(){
     var input = document.getElementById("message");
     if(input.value.trim() === "") return;
-    socket.emit("message", input.value);
+    socket.emit("message", {username: "{{ username }}", room: "{{ room }}", msg: input.value});
     input.value = "";
 }
 </script>

@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, session
-from flask_socketio import SocketIO, join_room, send
+from flask import Flask, render_template, request, redirect
+from flask_socketio import SocketIO, join_room, emit
 import json
 import os
 
@@ -22,7 +22,6 @@ def save_rooms(rooms):
 @app.route("/", methods=["GET", "POST"])
 def index():
     rooms = load_rooms()
-
     if request.method == "POST":
         action = request.form.get("action")
         username = request.form.get("username").strip()
@@ -44,33 +43,34 @@ def index():
             if rooms[room] != password:
                 return "Wrong password"
 
-        session["username"] = username
-        session["room"] = room
-        return redirect("/chat")
+        # Pasamos username y room a la URL
+        return redirect(f"/chat?username={username}&room={room}")
 
-    # Para GET, mostrar la lista de salas en el joinForm
     return render_template("index.html", rooms=rooms.keys())
 
 @app.route("/chat")
 def chat():
-    room = session.get("room")
-    username = session.get("username")
-    if not room or not username:
+    username = request.args.get("username")
+    room = request.args.get("room")
+    if not username or not room:
         return redirect("/")
-    return render_template("chat.html", room=room, username=username)
+    return render_template("chat.html", username=username, room=room)
 
+# Evento cuando alguien se une
 @socketio.on("join")
-def handle_join():
-    room = session.get("room")
-    username = session.get("username")
+def handle_join(data):
+    room = data["room"]
+    username = data["username"]
     join_room(room)
-    send(f"{username} joined the room.", to=room)
+    emit("message", f"{username} joined the room.", to=room, broadcast=True)
 
+# Evento cuando alguien envía un mensaje
 @socketio.on("message")
-def handle_message(msg):
-    room = session.get("room")
-    username = session.get("username")
-    send(f"{username}: {msg}", to=room)
+def handle_message(data):
+    room = data["room"]
+    username = data["username"]
+    msg = data["msg"]
+    emit("message", f"{username}: {msg}", to=room, broadcast=True)
 
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=10000)
