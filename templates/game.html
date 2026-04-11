@@ -46,14 +46,17 @@
                     </div>
                 </div>
                 
+                <!-- Opponents in cards dealt -->
+                <div class="your-hand-area" style="margin: 30px auto; max-width: 600px;">
+                    <div class="your-hand-label">👤 RIVAL'S HAND</div>
+                    <div class="your-cards" id="opponentsAreaDealt"></div>
+                </div>
+
                 <!-- Show cards -->
                 <div class="your-hand-area" style="margin: 30px auto; max-width: 600px;">
                     <div class="your-hand-label">🖐️ YOUR HAND</div>
                     <div class="your-cards" id="handCartsDealt"></div>
                 </div>
-                
-                <!-- Opponents in cards dealt -->
-                <div id="opponentsAreaDealt" style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 20px;"></div>
                 
                 <!-- Prediction -->
                 <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin: 30px 0; border: 2px solid #d4af37;">
@@ -99,9 +102,18 @@
                     <button onclick="submitPrediction(4)">4</button>
                 </div>
                 <div id="predictionStatusPredict" style="margin-top: 20px; color: #ffaa00;"></div>
-                
-                <!-- Opponents in prediction -->
-                <div id="opponentsAreaPredict" style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 20px;"></div>
+            
+            <!-- Opponents in prediction -->
+            <div class="your-hand-area" style="margin: 30px auto; max-width: 600px;">
+                <div class="your-hand-label">👤 RIVAL'S HAND</div>
+                <div class="your-cards" id="opponentsAreaPredict"></div>
+            </div>
+            
+            <!-- Your hand in prediction phase -->
+            <div class="your-hand-area" style="margin: 30px auto; max-width: 600px;">
+                <div class="your-hand-label">🖐️ YOUR HAND</div>
+                <div class="your-cards" id="handCardsPredict"></div>
+            </div>
             </div>
         </div>
     </div>
@@ -129,8 +141,11 @@
             </div>
 
             <!-- Área de Oponentes -->
-            <div class="opponents-area" id="opponentsArea">
-                <!-- Se generará dinámicamente -->
+            <div class="your-hand-area">
+                <div class="your-hand-label">👤 RIVAL'S HAND</div>
+                <div class="your-cards" id="opponentsArea">
+                    <!-- Se generará dinámicamente -->
+                </div>
             </div>
 
             <!-- Center: Deck and Played Cards -->
@@ -469,13 +484,7 @@ function render(data) {
                     }
                 }
                 const roundsWon = data.rounds_won[player] || 0;
-                opponentsHTML += `
-                    <div class="player-section">
-                        <div class="player-name">${player}</div>
-                        <div class="player-cards">${cardsHTML || '<div style="color: #d4af37; padding: 20px;">No cards</div>'}</div>
-                        <div class="card-count">${playerHand.length} cards | 🏆 ${roundsWon} rounds</div>
-                    </div>
-                `;
+                opponentsHTML += cardsHTML || '<div style="color: #d4af37; padding: 20px;">No cards</div>';
             }
         });
         if (data.game_phase === "cards_dealt") {
@@ -550,7 +559,7 @@ function render(data) {
                     `;
                 }
             });
-            document.getElementById("handCards").innerHTML = handHTML;
+            document.getElementById("handCardsPredict").innerHTML = handHTML;
         }
     }
 
