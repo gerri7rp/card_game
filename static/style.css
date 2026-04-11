@@ -312,6 +312,22 @@ button:disabled {
     margin-top: 10px;
 }
 
+.prediction-buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 20px 0;
+    align-items: center;
+}
+
+.predictions-display-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 @media (max-width: 768px) {
     .game-container {
         padding: 15px;

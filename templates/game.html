@@ -59,10 +59,34 @@
                 <!-- Prediction -->
                 <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin: 30px 0; border: 2px solid #d4af37;">
                     <p id="predictionText" style="margin: 15px 0; font-size: 1.1em;">How many rounds do you think you'll win? (0-4)</p>
-                    <div id="predictionButtons" style="display: flex; gap: 15px; justify-content: center; margin: 20px 0;">
+                    <div id="predictionButtons" class="prediction-buttons-container">
                         <!-- Buttons generated dynamically -->
                     </div>
                     <div id="predictionStatusCards" style="margin-top: 15px; color: #ffaa00; font-size: 1.1em;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Predictions Display Phase -->
+    <div id="predictionsDisplayPhase" style="display: none;">
+        <div class="game-table" style="display: flex; justify-content: center; align-items: center; min-height: 400px;">
+            <div style="text-align: center; color: #d4af37; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                
+                <h2>🔮 PREDICTIONS REVEALED</h2>
+
+                <div id="predictionsDisplayContent" style="
+                    margin: 30px auto; 
+                    width: 100%; 
+                    max-width: 800px; 
+                    display: flex; 
+                    justify-content: center; 
+                    gap: 20px; 
+                    flex-wrap: wrap;">
+                </div>
+
+                <div id="predictionsCountdown" style="margin-top: 20px; font-size: 1.2em; color: #00ff00;">
+                    Starting in <span id="countdownNumber">4</span>...
                 </div>
             </div>
         </div>
@@ -87,11 +111,11 @@
                 
                 <!-- Show predictions in real time -->
                 <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 2px solid #d4af37;">
-                    <div id="predictionsTextPhase" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;"></div>
+                    <div id="predictionsTextPhase" class="predictions-display-container"></div>
                 </div>
 
                 <p style="margin: 20px 0; font-size: 1.2em;">How many rounds do you think you'll win? (0-4)</p>
-                <div style="display: flex; gap: 15px; justify-content: center; margin: 30px 0;">
+                <div class="prediction-buttons-container">
                     <button onclick="submitPrediction(0)">0</button>
                     <button onclick="submitPrediction(1)">1</button>
                     <button onclick="submitPrediction(2)">2</button>
@@ -195,6 +219,7 @@ var currentPrediction = null;
 var lastPlayedCardCode = null;
 var selectedButton = null;
 var roundDelayTimeout = null;
+var predictionsCountdownTimeout = null;
 
 socket.on("connect", function() {
     socket.emit("join", {username: username, room: room});
@@ -305,6 +330,31 @@ function render(data) {
         roundDelayTimeout = null;
     }
 
+    // Handle predictions display countdown
+    if (data.game_phase === "predictions_display" && !predictionsCountdownTimeout) {
+        let countdown = 4;
+        const countdownElement = document.getElementById("countdownNumber");
+        if (countdownElement) {
+            countdownElement.textContent = countdown;
+        }
+        
+        predictionsCountdownTimeout = setInterval(() => {
+            countdown--;
+            if (countdownElement) {
+                countdownElement.textContent = countdown;
+            }
+            
+            if (countdown <= 0) {
+                clearInterval(predictionsCountdownTimeout);
+                predictionsCountdownTimeout = null;
+                socket.emit("start_game_after_predictions", {room: room});
+            }
+        }, 1000);
+    } else if (data.game_phase !== "predictions_display" && predictionsCountdownTimeout) {
+        clearInterval(predictionsCountdownTimeout);
+        predictionsCountdownTimeout = null;
+    }
+
     // Show/hide phases
     const setupPhase = document.getElementById("setupPhase");
     const cartsDealtPhase = document.getElementById("cartsDealtPhase");
@@ -312,6 +362,7 @@ function render(data) {
     const predictionPhase = document.getElementById("predictionPhase");
     const gamePhase = document.getElementById("gamePhase");
     const finishPhase = document.getElementById("finishPhase");
+    const predictionsDisplayPhase = document.getElementById("predictionsDisplayPhase");
     
     if (setupPhase) setupPhase.style.display = (data.game_started === false) ? "block" : "none";
     if (cartsDealtPhase) cartsDealtPhase.style.display = data.game_phase === "cards_dealt" ? "block" : "none";
@@ -319,6 +370,7 @@ function render(data) {
     if (predictionPhase) predictionPhase.style.display = data.game_phase === "predicting" ? "block" : "none";
     if (gamePhase) gamePhase.style.display = (data.game_phase === "playing" || data.game_phase === "round_end_delay") ? "block" : "none";
     if (finishPhase) finishPhase.style.display = data.game_phase === "finished" ? "block" : "none";
+    if (predictionsDisplayPhase) predictionsDisplayPhase.style.display = data.game_phase === "predictions_display" ? "block" : "none";
 
     // Generate prediction buttons dynamically
     if (data.game_phase === "cards_dealt" && data.cards_per_round) {
@@ -609,6 +661,24 @@ function render(data) {
         
         resultsHTML += "</div></div>";
         document.getElementById("finalResults").innerHTML = resultsHTML;
+    }
+
+    // Predictions display phase content
+    if (data.game_phase === "predictions_display") {
+        let displayHTML = "<div style='display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 600px; margin: 0 auto;'>";
+        data.players.forEach(p => {
+            const pred = data.predictions[p] ?? "...";
+            const isYou = p === username ? "👤 (You)" : "";
+            displayHTML += `
+                <div style='background: rgba(0,0,0,0.4); padding: 25px; border-radius: 15px; border: 3px solid #d4af37; text-align: center;'>
+                    <div style='font-size: 1.4em; font-weight: bold; margin-bottom: 15px; color: #d4af37;'>${p} ${isYou}</div>
+                    <div style='font-size: 2.5em; color: #00ff00; font-weight: bold; margin: 20px 0;'>${pred}</div>
+                    <div style='font-size: 1.1em; color: #ffaa00;'>rounds predicted</div>
+                </div>
+            `;
+        });
+        displayHTML += "</div>";
+        document.getElementById("predictionsDisplayContent").innerHTML = displayHTML;
     }
 
     // Update button selections

@@ -246,12 +246,24 @@ def make_prediction(data):
             return
         room_data["predictions"][username] = rounds
     
-    # Si todos los jugadores han hecho su predicción, empieza el juego automáticamente
+    # Si todos los jugadores han hecho su predicción, mostrar pantalla de predicciones
     if len(room_data["predictions"]) == len(room_data["players"]):
-        room_data["game_phase"] = "playing"
-        room_data["current_round"] = 1
-        room_data["turn"] = room_data["first_player"]  # El primer jugador comienza
+        room_data["game_phase"] = "predictions_display"
         room_data["rounds_won"] = {p: 0 for p in room_data["players"]}  # Inicializar rounds_won
+    
+    emit("update", room_data, to=room)
+
+@socketio.on("start_game_after_predictions")
+def start_game_after_predictions(data):
+    room = data["room"]
+    room_data = rooms[room]
+    
+    if room_data["game_phase"] != "predictions_display":
+        return
+    
+    room_data["game_phase"] = "playing"
+    room_data["current_round"] = 1
+    room_data["turn"] = room_data["first_player"]  # El primer jugador comienza
     
     emit("update", room_data, to=room)
 
