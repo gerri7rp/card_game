@@ -301,14 +301,34 @@ def play_card(data):
         if room_data["current_round"] == room_data["cards_per_round"]:
             # Calculate points for this level
             calculate_points(room_data)
-            # Show round summary instead of immediately going to next level
-            room_data["game_phase"] = "round_summary"
+            # Use delay before showing summary for the last round too
+            room_data["game_phase"] = "round_end_delay"
         else:
-            room_data["current_round"] += 1
-            room_data["current_round_cards"] = []
-            room_data["first_card_suit"] = None
+            # Signal that round is complete and let frontend handle the delay
+            room_data["game_phase"] = "round_end_delay"
     else:
         room_data["turn"] = other_player
+    
+    emit("update", room_data, to=room)
+
+@socketio.on("clear_round_cards")
+def clear_round_cards(data):
+    room = data["room"]
+    room_data = rooms[room]
+    
+    if room_data["game_phase"] != "round_end_delay":
+        return
+    
+    # Check if this was the last round of the level
+    if room_data["current_round"] == room_data["cards_per_round"]:
+        # Show round summary after delay
+        room_data["game_phase"] = "round_summary"
+    else:
+        # Clear cards and start next round
+        room_data["current_round"] += 1
+        room_data["current_round_cards"] = []
+        room_data["first_card_suit"] = None
+        room_data["game_phase"] = "playing"
     
     emit("update", room_data, to=room)
 

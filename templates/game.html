@@ -194,6 +194,7 @@ var room = "{{ room }}";
 var currentPrediction = null;
 var lastPlayedCardCode = null;
 var selectedButton = null;
+var roundDelayTimeout = null;
 
 socket.on("connect", function() {
     socket.emit("join", {username: username, room: room});
@@ -293,6 +294,17 @@ function render(data) {
     // Update local prediction
     currentPrediction = data.predictions[username] || null;
 
+    // Handle round end delay
+    if (data.game_phase === "round_end_delay" && !roundDelayTimeout) {
+        roundDelayTimeout = setTimeout(() => {
+            socket.emit("clear_round_cards", {room: room});
+            roundDelayTimeout = null;
+        }, 1000);
+    } else if (data.game_phase !== "round_end_delay" && roundDelayTimeout) {
+        clearTimeout(roundDelayTimeout);
+        roundDelayTimeout = null;
+    }
+
     // Show/hide phases
     const setupPhase = document.getElementById("setupPhase");
     const cartsDealtPhase = document.getElementById("cartsDealtPhase");
@@ -305,7 +317,7 @@ function render(data) {
     if (cartsDealtPhase) cartsDealtPhase.style.display = data.game_phase === "cards_dealt" ? "block" : "none";
     if (roundSummaryPhase) roundSummaryPhase.style.display = data.game_phase === "round_summary" ? "block" : "none";
     if (predictionPhase) predictionPhase.style.display = data.game_phase === "predicting" ? "block" : "none";
-    if (gamePhase) gamePhase.style.display = data.game_phase === "playing" ? "block" : "none";
+    if (gamePhase) gamePhase.style.display = (data.game_phase === "playing" || data.game_phase === "round_end_delay") ? "block" : "none";
     if (finishPhase) finishPhase.style.display = data.game_phase === "finished" ? "block" : "none";
 
     // Generate prediction buttons dynamically
@@ -458,12 +470,17 @@ function render(data) {
     }
 
     // Turn indicator
-    if (data.game_phase === "playing") {
-        const isYourTurn = data.turn === username;
-        document.getElementById("turnIndicator").textContent = isYourTurn ? 
-            "✅ YOUR TURN" : 
-            "⏳ Turn of: " + data.turn;
-        document.getElementById("turnIndicator").style.color = isYourTurn ? "#00ff00" : "#ffaa00";
+    if (data.game_phase === "playing" || data.game_phase === "round_end_delay") {
+        if (data.game_phase === "round_end_delay") {
+            document.getElementById("turnIndicator").textContent = "🏁 Round finished - preparing next round...";
+            document.getElementById("turnIndicator").style.color = "#00aaff";
+        } else {
+            const isYourTurn = data.turn === username;
+            document.getElementById("turnIndicator").textContent = isYourTurn ? 
+                "✅ YOUR TURN" : 
+                "⏳ Turn of: " + data.turn;
+            document.getElementById("turnIndicator").style.color = isYourTurn ? "#00ff00" : "#ffaa00";
+        }
         document.getElementById("currentRound").textContent = data.current_round;
     }
 
@@ -518,25 +535,26 @@ function render(data) {
     document.getElementById("playedCards").innerHTML = playedHTML;
 
     // Your hand
-    if (data.game_phase === "playing" && data.hands[username]) {
+    if ((data.game_phase === "playing" || data.game_phase === "round_end_delay") && data.hands[username]) {
         let handHTML = "";
         const firstCardPlayed = data.current_round_cards && data.current_round_cards.length > 0;
         const firstCardSuit = data.first_card_suit;
         
         data.hands[username].forEach(card => {
-            const isYourTurn = data.turn === username;
+            const isYourTurn = data.turn === username && data.game_phase === "playing";
             const isValid = isValidCard(card, firstCardSuit, data.hands[username], firstCardPlayed);
-            const opacity = isYourTurn && firstCardPlayed && !isValid ? "0.3" : "1";
-            const cursor = isValid ? "pointer" : "not-allowed";
+            const isDelayPhase = data.game_phase === "round_end_delay";
+            const opacity = (isYourTurn && firstCardPlayed && !isValid) || isDelayPhase ? "0.3" : "1";
+            const cursor = (isValid && isYourTurn && !isDelayPhase) ? "pointer" : "not-allowed";
             
             if (data.cards_per_round == 1) {
-                handHTML += `<div class="card-back" style="cursor: ${cursor}; opacity: ${opacity};" onclick="${isValid ? `playCard('${card.code}')` : ''}" title="Hidden card"></div>`;
+                handHTML += `<div class="card-back" style="cursor: ${cursor}; opacity: ${opacity};" onclick="${(isValid && isYourTurn && !isDelayPhase) ? `playCard('${card.code}')` : ''}" title="Hidden card"></div>`;
             } else {
                 handHTML += `
                     <img 
                         src="${card.image}" 
                         class="card-image" 
-                        onclick="${isValid ? `playCard('${card.code}')` : ''}"
+                        onclick="${(isValid && isYourTurn && !isDelayPhase) ? `playCard('${card.code}')` : ''}"
                         style="opacity: ${opacity}; cursor: ${cursor};"
                         title="${card.value} of ${card.suit}"
                     >
