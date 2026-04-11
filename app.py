@@ -205,8 +205,8 @@ def start_game(data):
         room_data["hands"][room_data["players"][1]] = cards[room_data["cards_per_round"]:]
         room_data["game_started"] = True
         room_data["game_phase"] = "cards_dealt"
-        room_data["turn"] = room_data["creator"]
-        room_data["first_player"] = room_data["creator"]
+        room_data["first_player"] = random.choice(room_data["players"])
+        room_data["turn"] = room_data["first_player"]
 
     emit("update", room_data, to=room)
 
