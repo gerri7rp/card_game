@@ -102,6 +102,7 @@ def index():
         username = request.form.get("username").strip()
         room = request.form.get("room").strip()
         action = request.form.get("action")
+        cards_per_round = request.form.get("cards_per_round")
 
         if not username or not room:
             return "Username and room required"
@@ -109,6 +110,14 @@ def index():
         if action == "create":
             if room in rooms:
                 return "Room already exists"
+            # Validar que cards_per_round esté entre 1 y 10
+            try:
+                cards_per_round = int(cards_per_round)
+                if cards_per_round < 1 or cards_per_round > 10:
+                    return "Number of cards must be between 1 and 10"
+            except (ValueError, TypeError):
+                return "Invalid number of cards selected"
+            
             rooms[room] = {
                 "players": [username],
                 "creator": username,
@@ -128,7 +137,7 @@ def index():
                 "first_card_suit": None,
                 "current_round_cards": [],
                 "first_player": None,
-                "cards_per_round": 4  # Número de cartas por ronda, decrece cada nivel
+                "cards_per_round": cards_per_round  # Usar el número de cartas seleccionado
             }
         elif action == "join":
             if room not in rooms:
