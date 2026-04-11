@@ -665,6 +665,18 @@ function render(data) {
 
     // Predictions display phase content
     if (data.game_phase === "predictions_display") {
+        // Calculate total predictions first
+        let totalPredictions = 0;
+        data.players.forEach(p => {
+            const pred = data.predictions[p] ?? 0;
+            if (pred !== "...") {
+                totalPredictions += parseInt(pred);
+            }
+        });
+        
+        const cardsPerRound = data.cards_per_round || 0;
+        
+        // Create prediction cards grid
         let displayHTML = "<div style='display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 600px; margin: 0 auto;'>";
         data.players.forEach(p => {
             const pred = data.predictions[p] ?? "...";
@@ -677,7 +689,32 @@ function render(data) {
                 </div>
             `;
         });
-        displayHTML += "</div>";
+        displayHTML += "</div><div style='width: 100%;'>"; // Close grid and open new container for message
+        let messageHTML = "";
+        if (totalPredictions > cardsPerRound) {
+            messageHTML = `
+                <div style='margin-top: 30px; padding: 20px; background: rgba(255,0,0,0.2); border-radius: 15px; border: 2px solid #ff4444; text-align: center; max-width: 600px; margin-left: auto; margin-right: auto;'>
+                    <div style='font-size: 1.3em; color: #ff6666; font-weight: bold;'>Someone is not getting enough 😢</div>
+                    <div style='margin-top: 10px; font-size: 1.1em; color: #d4af37;'>Total predictions: ${totalPredictions} / ${cardsPerRound} cards</div>
+                </div>
+            `;
+        } else if (totalPredictions === cardsPerRound) {
+            messageHTML = `
+                <div style='margin-top: 30px; padding: 20px; background: rgba(0,255,0,0.2); border-radius: 15px; border: 2px solid #00ff00; text-align: center; max-width: 600px; margin-left: auto; margin-right: auto;'>
+                    <div style='font-size: 1.3em; color: #00ff00; font-weight: bold;'>Everyones is getting exactly what they wanted 😏</div>
+                    <div style='margin-top: 10px; font-size: 1.1em; color: #d4af37;'>Total predictions: ${totalPredictions} / ${cardsPerRound} cards</div>
+                </div>
+            `;
+        } else {
+            messageHTML = `
+                <div style='margin-top: 30px; padding: 20px; background: rgba(255,255,0,0.2); border-radius: 15px; border: 2px solid #ffff00; text-align: center; max-width: 600px; margin-left: auto; margin-right: auto;'>
+                    <div style='font-size: 1.3em; color: #ffff00; font-weight: bold;'>Someone is getting too much 😉</div>
+                    <div style='margin-top: 10px; font-size: 1.1em; color: #d4af37;'>Total predictions: ${totalPredictions} / ${cardsPerRound} cards</div>
+                </div>
+            `;
+        }
+        
+        displayHTML += messageHTML + "</div>"; // Close the message container
         document.getElementById("predictionsDisplayContent").innerHTML = displayHTML;
     }
 
