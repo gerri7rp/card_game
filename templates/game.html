@@ -38,9 +38,7 @@
     <div id="cartsDealtPhase" style="display: none;">
         <div class="game-table" style="justify-content: center; align-items: center;">
             <div style="text-align: center; color: #d4af37; width: 100%;">
-                <h2>🎴 CARDS DEALT</h2>
                 <div style="margin: 20px 0; font-size: 1.3em; line-height: 1.8;">
-                    <div id="cardsDealtText">4 cards have been dealt to each player</div>
                     <div style="margin-top: 10px; font-size: 1.5em; color: #00ff00;">
                         🏁 <span id="firstPlayerName">{{ username }}</span> STARTS
                     </div>
@@ -60,7 +58,6 @@
                 
                 <!-- Prediction -->
                 <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin: 30px 0; border: 2px solid #d4af37;">
-                    <h3 style="margin-bottom: 15px;">📊 PLACE YOUR PREDICTION</h3>
                     <p id="predictionText" style="margin: 15px 0; font-size: 1.1em;">How many rounds do you think you'll win? (0-4)</p>
                     <div id="predictionButtons" style="display: flex; gap: 15px; justify-content: center; margin: 20px 0;">
                         <!-- Buttons generated dynamically -->
@@ -313,7 +310,6 @@ function render(data) {
         }
         document.getElementById("predictionButtons").innerHTML = buttonsHTML;
         document.getElementById("predictionText").textContent = `How many rounds do you think you'll win? (0-${data.cards_per_round})`;
-        document.getElementById("cardsDealtText").textContent = `${data.cards_per_round} cards have been dealt to each player`;
     }
 
     // Update level indicator
