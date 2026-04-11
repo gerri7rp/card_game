@@ -319,7 +319,13 @@ def continue_game(data):
         room_data["current_round_cards"] = []
         room_data["first_card_suit"] = None
         room_data["played_cards"] = []
+        
+        # Alternate who starts the next level
+        current_first_player = room_data["first_player"]
+        other_player = [p for p in room_data["players"] if p != current_first_player][0]
+        room_data["first_player"] = other_player
         room_data["turn"] = room_data["first_player"]
+        
         room_data["game_phase"] = "cards_dealt"
         # Deal new cards for the next level
         cards_count = room_data["cards_per_round"] * 2
