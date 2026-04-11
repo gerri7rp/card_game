@@ -137,7 +137,8 @@ def index():
                 "first_card_suit": None,
                 "current_round_cards": [],
                 "first_player": None,
-                "cards_per_round": cards_per_round  # Usar el número de cartas seleccionado
+                "cards_per_round": cards_per_round,  # Usar el número de cartas seleccionado
+                "original_cards_per_round": cards_per_round  # Guardar el número original para reinicios
             }
         elif action == "join":
             if room not in rooms:
@@ -347,6 +348,40 @@ def continue_game(data):
         room_data["hands"][room_data["players"][1]] = cards[room_data["cards_per_round"]:]
     else:
         room_data["game_phase"] = "finished"
+    
+    emit("update", room_data, to=room)
+
+@socketio.on("restart_game")
+def restart_game(data):
+    room = data["room"]
+    room_data = rooms[room]
+    
+    if room_data["game_phase"] != "finished":
+        return
+    
+    # Guardar el número original de cartas para reiniciar
+    original_cards_per_round = room_data.get("original_cards_per_round", room_data["cards_per_round"])
+    
+    # Resetear todo el estado del juego pero mantener los jugadores y la configuración básica
+    room_data["game_started"] = False
+    room_data["hands"] = {}
+    room_data["turn"] = None
+    room_data["played_cards"] = []
+    room_data["ready"] = {}
+    room_data["deck_id"] = None
+    room_data["deck_remaining"] = 0
+    room_data["game_phase"] = "waiting"
+    room_data["predictions"] = {}
+    room_data["rounds_won"] = {}
+    # Mantener los puntos para que se acumulen entre partidas
+    if "points" not in room_data:
+        room_data["points"] = {p: 0 for p in room_data["players"]}
+    room_data["current_round"] = 0
+    room_data["first_card_suit"] = None
+    room_data["current_round_cards"] = []
+    room_data["first_player"] = None
+    room_data["cards_per_round"] = original_cards_per_round
+    room_data["original_cards_per_round"] = original_cards_per_round
     
     emit("update", room_data, to=room)
 
