@@ -307,12 +307,44 @@ function isValidCard(card, firstCardSuit, hand, firstCardPlayed) {
 
 function getSuit(card) {
     const suitMap = {
-        'SPADES': '♠', '♠': '♠',
-        'HEARTS': '♥', '♥': '♥',
-        'DIAMONDS': '♦', '♦': '♦',
-        'CLUBS': '♣', '♣': '♣'
+        'SPADES': 'SPADES', 'SPADES': 'SPADES',
+        'HEARTS': 'HEARTS', 'HEARTS': 'HEARTS',
+        'DIAMONDS': 'DIAMONDS', 'DIAMONDS': 'DIAMONDS',
+        'CLUBS': 'CLUBS', 'CLUBS': 'CLUBS'
     };
     return suitMap[card.suit] || card.suit;
+}
+
+function sortCardsBySuitAndValue(cards) {
+    // Define suit order: picas, corazones, treboles, diamantes
+    const suitOrder = {'SPADES': 0, 'HEARTS': 1, 'CLUBS': 2, 'DIAMONDS': 3};
+    
+    // Create a copy to avoid modifying original array
+    const sortedCards = [...cards];
+    
+    sortedCards.sort((a, b) => {
+        // First sort by suit
+        const suitComparison = suitOrder[a.suit] - suitOrder[b.suit];
+        if (suitComparison !== 0) {
+            return suitComparison;
+        }
+        
+        // Then sort by value (high to low: A, K, Q, J, 10, 9, 8, 7, 6, 5, 4, 3, 2)
+        const getCardValue = (value) => {
+            const valueMap = {
+                'ACE': 14, 'A': 14,
+                'KING': 13, 'K': 13,
+                'QUEEN': 12, 'Q': 12,
+                'JACK': 11, 'J': 11,
+                '10': 10, '0': 10
+            };
+            return valueMap[value] || parseInt(value);
+        };
+        
+        return getCardValue(b.value) - getCardValue(a.value);
+    });
+    
+    return sortedCards;
 }
 
 function render(data) {
@@ -394,7 +426,8 @@ function render(data) {
         document.getElementById("firstPlayerName").textContent = data.first_player;
         if (data.hands[username]) {
             let handHTML = "";
-            data.hands[username].forEach(card => {
+            const sortedCards = sortCardsBySuitAndValue(data.hands[username]);
+            sortedCards.forEach(card => {
                 if (data.cards_per_round == 1) {
                     handHTML += '<div class="card-back"></div>';
                 } else {
@@ -592,7 +625,8 @@ function render(data) {
         const firstCardPlayed = data.current_round_cards && data.current_round_cards.length > 0;
         const firstCardSuit = data.first_card_suit;
         
-        data.hands[username].forEach(card => {
+        const sortedCards = sortCardsBySuitAndValue(data.hands[username]);
+        sortedCards.forEach(card => {
             const isYourTurn = data.turn === username && data.game_phase === "playing";
             const isValid = isValidCard(card, firstCardSuit, data.hands[username], firstCardPlayed);
             const isDelayPhase = data.game_phase === "round_end_delay";
@@ -618,7 +652,8 @@ function render(data) {
         // Mostrar las cartas durante predicción
         if (data.hands[username]) {
             let handHTML = "";
-            data.hands[username].forEach(card => {
+            const sortedCards = sortCardsBySuitAndValue(data.hands[username]);
+            sortedCards.forEach(card => {
                 if (data.cards_per_round == 1) {
                     handHTML += '<div class="card-back"></div>';
                 } else {
