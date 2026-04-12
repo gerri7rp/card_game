@@ -2,10 +2,37 @@ from flask import Flask, render_template, request, redirect
 from flask_socketio import SocketIO, join_room, emit
 import random
 import requests
+import os
+import uuid
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 socketio = SocketIO(app)
+
+# Configure upload folder for profile pictures
+UPLOAD_FOLDER = 'static/profile_pics'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_profile_picture(file):
+    if file and file.filename and allowed_file(file.filename):
+        # Generate unique filename
+        filename = str(uuid.uuid4()) + '.' + file.filename.rsplit('.', 1)[1].lower()
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        return filename
+    return None
 
 rooms = {}
 
@@ -103,6 +130,12 @@ def index():
         room = request.form.get("room").strip()
         action = request.form.get("action")
         cards_per_round = request.form.get("cards_per_round")
+        
+        # Handle profile picture upload
+        profile_pic_filename = None
+        if 'profile_pic' in request.files:
+            file = request.files['profile_pic']
+            profile_pic_filename = save_profile_picture(file)
 
         if not username or not room:
             return "Username and room required"
@@ -138,7 +171,8 @@ def index():
                 "current_round_cards": [],
                 "first_player": None,
                 "cards_per_round": cards_per_round,  # Usar el número de cartas seleccionado
-                "original_cards_per_round": cards_per_round  # Guardar el número original para reinicios
+                "original_cards_per_round": cards_per_round,  # Guardar el número original para reinicios,
+                "profile_pics": {username: profile_pic_filename}  # Store profile pictures per player
             }
         elif action == "join":
             if room not in rooms:
@@ -146,6 +180,10 @@ def index():
             if len(rooms[room]["players"]) >= 2:
                 return "Room full"
             rooms[room]["players"].append(username)
+            # Add profile picture for joining player
+            if "profile_pics" not in rooms[room]:
+                rooms[room]["profile_pics"] = {}
+            rooms[room]["profile_pics"][username] = profile_pic_filename
 
         return redirect(f"/game?username={username}&room={room}")
 

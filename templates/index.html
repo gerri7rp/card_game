@@ -220,13 +220,17 @@
 
         <div id="createForm" class="form-container">
             <h2 class="form-title">Create Room</h2>
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="create">
                 <div class="form-group">
                     <input type="text" name="username" class="form-input" placeholder="Your username" required>
                 </div>
                 <div class="form-group">
                     <input type="text" name="room" class="form-input" placeholder="Room name" required>
+                </div>
+                <div class="form-group">
+                    <label for="profile_pic" style="color: #d4af37; font-size: 0.9em; margin-bottom: 5px; display: block;">Profile Picture (optional)</label>
+                    <input type="file" name="profile_pic" id="profile_pic" accept="image/*" class="form-input" style="padding: 10px;">
                 </div>
                 <div class="form-group">
                     <select name="cards_per_round" class="form-select" required>
@@ -249,7 +253,7 @@
 
         <div id="joinForm" class="form-container">
             <h2 class="form-title">Join Room</h2>
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="join">
                 <div class="form-group">
                     <input type="text" name="username" class="form-input" placeholder="Your username" required>
@@ -261,6 +265,10 @@
                             <option value="{{ room }}">{{ room }}</option>
                         {% endfor %}
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="profile_pic_join" style="color: #d4af37; font-size: 0.9em; margin-bottom: 5px; display: block;">Profile Picture (optional)</label>
+                    <input type="file" name="profile_pic" id="profile_pic_join" accept="image/*" class="form-input" style="padding: 10px;">
                 </div>
                 <button type="submit" class="submit-btn">Join Room</button>
             </form>

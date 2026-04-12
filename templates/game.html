@@ -347,9 +347,65 @@ function sortCardsBySuitAndValue(cards) {
     return sortedCards;
 }
 
+// Profile picture cache for performance
+const profilePicCache = new Map();
+const loadedProfilePics = new Set();
+
+function getProfilePicHtml(playerName, profilePics, small = false) {
+    const profilePic = profilePics && profilePics[playerName];
+    const sizeClass = small ? 'small' : '';
+    const defaultClass = small ? 'small-default' : 'default';
+    
+    if (profilePic) {
+        const cacheKey = `${profilePic}_${sizeClass}`;
+        
+        // Check cache first
+        if (profilePicCache.has(cacheKey)) {
+            return profilePicCache.get(cacheKey);
+        }
+        
+        // Create optimized image element with loading strategy
+        const imgHtml = `<img src="/static/profile_pics/${profilePic}" class="profile-pic-${sizeClass}" alt="${playerName}" loading="lazy" style="opacity: 0; transition: opacity 0.3s;" onload="this.style.opacity='1';" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">`;
+        const fallbackHtml = `<div class="profile-pic-${defaultClass}" style="display: none;">${playerName.charAt(0).toUpperCase()}</div>`;
+        const fullHtml = imgHtml + fallbackHtml;
+        
+        // Cache the result
+        profilePicCache.set(cacheKey, fullHtml);
+        
+        // Preload image if not already loaded
+        if (!loadedProfilePics.has(profilePic)) {
+            const preloadImg = new Image();
+            preloadImg.onload = () => loadedProfilePics.add(profilePic);
+            preloadImg.src = `/static/profile_pics/${profilePic}`;
+        }
+        
+        return fullHtml;
+    } else {
+        // Show first letter of username as default
+        const initial = playerName.charAt(0).toUpperCase();
+        return `<div class="profile-pic-${defaultClass}">${initial}</div>`;
+    }
+}
+
+// Batch preload profile pictures for better performance
+function preloadProfilePictures(profilePics) {
+    if (!profilePics) return;
+    
+    Object.values(profilePics).forEach(pic => {
+        if (pic && !loadedProfilePics.has(pic)) {
+            const img = new Image();
+            img.onload = () => loadedProfilePics.add(pic);
+            img.src = `/static/profile_pics/${pic}`;
+        }
+    });
+}
+
 function render(data) {
     // Update local prediction
     currentPrediction = data.predictions[username] || null;
+    
+    // Preload profile pictures for better performance
+    preloadProfilePictures(data.profile_pics);
 
     // Handle round end delay
     if (data.game_phase === "round_end_delay" && !roundDelayTimeout) {
@@ -491,9 +547,10 @@ function render(data) {
             const won = data.rounds_won[p] ?? 0;
             const points = data.points[p] ?? 0;
             const isYou = p === username ? "👤 (You)" : "";
+            const profilePicHtml = getProfilePicHtml(p, data.profile_pics, true);
             predHTML += `
                 <div style='background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border-left: 3px solid #d4af37;'>
-                    <div style='font-size: 1.1em; font-weight: bold;'>${p} ${isYou}</div>
+                    <div class='player-info-small'>${profilePicHtml}<div style='font-size: 1.1em; font-weight: bold;'>${p} ${isYou}</div></div>
                     <div style='margin-top: 8px;'>📊 Prediction: <span style='font-size: 1.3em; color: #00ff00;'>${pred}</span></div>
                     <div style='margin-top: 5px;'>🏆 Rounds Won: <span style='font-size: 1.3em; color: #ffaa00;'>${won}</span></div>
                     <div style='margin-top: 8px;'>⭐ Total Score: <span style='font-size: 1.3em; color: #ff6600; font-weight: bold;'>${points}</span></div>
@@ -536,10 +593,11 @@ function render(data) {
             
             const pointsSign = pointsEarned >= 0 ? "+" : "";
             const isYou = p === username ? "👤 (You)" : "";
+            const profilePicHtml = getProfilePicHtml(p, data.profile_pics, true);
             
             summaryHTML += `
                 <div style='background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 4px solid #d4af37;'>
-                    <div style='font-size: 1.2em; font-weight: bold; margin-bottom: 10px;'>${p} ${isYou}</div>
+                    <div class='player-info-small'>${profilePicHtml}<div style='font-size: 1.2em; font-weight: bold; margin-bottom: 10px;'>${p} ${isYou}</div></div>
                     <div style='margin: 8px 0;'>🎯 Prediction: <span style='color: #00ff00;'>${pred}</span></div>
                     <div style='margin: 8px 0;'>🏆 Rounds Won: <span style='color: #ffaa00;'>${won}</span></div>
                     <div style='margin: 8px 0;'>${resultEmoji} Result: <span style='color: ${pointsColor};'>${resultText}</span></div>
@@ -683,15 +741,18 @@ function render(data) {
             }
         });
         
+        const winnerProfilePic = getProfilePicHtml(winner, data.profile_pics);
+        
         let resultsHTML = "<div>";
-        resultsHTML += `<div style="margin: 20px 0; font-size: 1.5em; color: #00ff00; font-weight: bold;">🎉 WINNER: ${winner} with ${maxPoints} points 🎉</div>`;
+        resultsHTML += `<div style="margin: 20px 0; font-size: 1.5em; color: #00ff00; font-weight: bold; display: flex; align-items: center; justify-content: center;">${winnerProfilePic}🎉 WINNER: ${winner} with ${maxPoints} points 🎉</div>`;
         resultsHTML += "<div style='margin-top: 30px; border-top: 2px solid #d4af37; padding-top: 20px;'>";
         resultsHTML += "<div style='font-size: 1.2em; color: #d4af37; font-weight: bold; margin-bottom: 15px;'>Final Summary:</div>";
         
         data.players.forEach(p => {
             const points = data.points[p];
             const isWinner = p === winner ? "👑 " : "";
-            resultsHTML += `<div style="margin: 15px 0; font-size: 1.1em;">${isWinner}${p}: <span style='color: #ff6600; font-weight: bold;'>${points} points</span></div>`;
+            const profilePicHtml = getProfilePicHtml(p, data.profile_pics, true);
+            resultsHTML += `<div style="margin: 15px 0; font-size: 1.1em; display: flex; align-items: center;">${profilePicHtml}${isWinner}${p}: <span style='color: #ff6600; font-weight: bold;'>${points} points</span></div>`;
         });
         
         resultsHTML += "</div></div>";
@@ -716,9 +777,10 @@ function render(data) {
         data.players.forEach(p => {
             const pred = data.predictions[p] ?? "...";
             const isYou = p === username ? "👤 (You)" : "";
+            const profilePicHtml = getProfilePicHtml(p, data.profile_pics, true);
             displayHTML += `
                 <div style='background: rgba(0,0,0,0.4); padding: 25px; border-radius: 15px; border: 3px solid #d4af37; text-align: center;'>
-                    <div style='font-size: 1.4em; font-weight: bold; margin-bottom: 15px; color: #d4af37;'>${p} ${isYou}</div>
+                    <div class='player-info-small'>${profilePicHtml}<div style='font-size: 1.4em; font-weight: bold; margin-bottom: 15px; color: #d4af37;'>${p} ${isYou}</div></div>
                     <div style='font-size: 2.5em; color: #00ff00; font-weight: bold; margin: 20px 0;'>${pred}</div>
                     <div style='font-size: 1.1em; color: #ffaa00;'>rounds predicted</div>
                 </div>
