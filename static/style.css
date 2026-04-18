@@ -257,6 +257,7 @@ body {
     transform: translateY(-15px);
     box-shadow: 0 8px 20px rgba(212, 175, 55, 0.5);
     border-color: #d4af37;
+    opacity: inherit !important;
 }
 
 .buttons-area {

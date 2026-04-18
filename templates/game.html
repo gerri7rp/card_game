@@ -295,11 +295,14 @@ function isValidCard(card, firstCardSuit, hand, firstCardPlayed) {
     if (!firstCardPlayed) return true;
     
     const cardSuit = getSuit(card);
+
+    // Convert firstCardSuit to name format for comparison
+    const firstCardSuitName = getSuit({suit: firstCardSuit});
     
     // If you have the suit, you must play it
-    const hasSuit = hand.some(c => getSuit(c) === firstCardSuit);
+    const hasSuit = hand.some(c => getSuit(c) === firstCardSuitName);
     if (hasSuit) {
-        return cardSuit === firstCardSuit;
+        return cardSuit === firstCardSuitName;
     }
     
     return true;
@@ -307,10 +310,14 @@ function isValidCard(card, firstCardSuit, hand, firstCardPlayed) {
 
 function getSuit(card) {
     const suitMap = {
-        'SPADES': 'SPADES', 'SPADES': 'SPADES',
-        'HEARTS': 'HEARTS', 'HEARTS': 'HEARTS',
-        'DIAMONDS': 'DIAMONDS', 'DIAMONDS': 'DIAMONDS',
-        'CLUBS': 'CLUBS', 'CLUBS': 'CLUBS'
+        'SPADES': 'SPADES',
+        'HEARTS': 'HEARTS', 
+        'DIAMONDS': 'DIAMONDS',
+        'CLUBS': 'CLUBS',
+        '♠': 'SPADES',
+        '♥': 'HEARTS',
+        '♦': 'DIAMONDS',
+        '♣': 'CLUBS'
     };
     return suitMap[card.suit] || card.suit;
 }
@@ -682,6 +689,14 @@ function render(data) {
         let handHTML = "";
         const firstCardPlayed = data.current_round_cards && data.current_round_cards.length > 0;
         const firstCardSuit = data.first_card_suit;
+
+        // Debug logging para opacity
+        console.log("=== OPACITY DEBUG ===");
+        console.log("Game phase:", data.game_phase);
+        console.log("Your turn:", data.turn === username);
+        console.log("First card played:", firstCardPlayed);
+        console.log("First card suit:", firstCardSuit);
+        console.log("Is delay phase:", data.game_phase === "round_end_delay");
         
         const sortedCards = sortCardsBySuitAndValue(data.hands[username]);
         sortedCards.forEach(card => {
@@ -691,6 +706,12 @@ function render(data) {
             const opacity = (isYourTurn && firstCardPlayed && !isValid) || isDelayPhase ? "0.3" : "1";
             const cursor = (isValid && isYourTurn && !isDelayPhase) ? "pointer" : "not-allowed";
             
+            console.log(`Card: ${card.value} ${card.suit}`);
+            console.log(`  Card suit: ${getSuit(card)}`);
+            console.log(`  Is valid: ${isValid}`);
+            console.log(`  Should be opaque: ${isYourTurn && firstCardPlayed && !isValid}`);
+            console.log(`  Final opacity: ${opacity}`);
+
             if (data.cards_per_round == 1) {
                 handHTML += `<div class="card-back" style="cursor: ${cursor}; opacity: ${opacity};" onclick="${(isValid && isYourTurn && !isDelayPhase) ? `playCard('${card.code}')` : ''}" title="Hidden card"></div>`;
             } else {

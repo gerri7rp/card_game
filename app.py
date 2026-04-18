@@ -73,7 +73,7 @@ def can_play_card(card, first_card_suit, hand, first_card_played):
     # If you have the suit that was played, you must play it
     hand_suits = [get_card_suit(c) for c in hand]
     if first_card_suit in hand_suits:
-        return card_suit == first_card_suit or card_suit == '♠'  # O una pica
+        return card_suit == first_card_suit
     
     # If you don't have the suit, you can play any card
     return True
