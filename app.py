@@ -443,9 +443,7 @@ def restart_game(data):
     room_data["game_phase"] = "waiting"
     room_data["predictions"] = {}
     room_data["rounds_won"] = {}
-    # Mantener los puntos para que se acumulen entre partidas
-    if "points" not in room_data:
-        room_data["points"] = {p: 0 for p in room_data["players"]}
+    room_data["points"] = {p: 0 for p in room_data["players"]}
     room_data["current_round"] = 0
     room_data["first_card_suit"] = None
     room_data["current_round_cards"] = []
