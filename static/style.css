@@ -450,3 +450,20 @@ button:disabled {
         opacity: 1;
     }
 }
+
+/* Invalid cards should not have hover effects */
+.card-image.invalid-card:hover,
+.card-back.invalid-card:hover {
+    transform: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    border-color: transparent !important;
+    opacity: 0.3 !important;
+}
+
+/* Valid cards maintain hover effects */
+.card-image.valid-card:hover,
+.card-back.valid-card:hover {
+    transform: translateY(-15px);
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.5);
+    border-color: #d4af37;
+}

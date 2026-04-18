@@ -690,13 +690,6 @@ function render(data) {
         const firstCardPlayed = data.current_round_cards && data.current_round_cards.length > 0;
         const firstCardSuit = data.first_card_suit;
 
-        // Debug logging para opacity
-        console.log("=== OPACITY DEBUG ===");
-        console.log("Game phase:", data.game_phase);
-        console.log("Your turn:", data.turn === username);
-        console.log("First card played:", firstCardPlayed);
-        console.log("First card suit:", firstCardSuit);
-        console.log("Is delay phase:", data.game_phase === "round_end_delay");
         
         const sortedCards = sortCardsBySuitAndValue(data.hands[username]);
         sortedCards.forEach(card => {
@@ -706,19 +699,16 @@ function render(data) {
             const opacity = (isYourTurn && firstCardPlayed && !isValid) || isDelayPhase ? "0.3" : "1";
             const cursor = (isValid && isYourTurn && !isDelayPhase) ? "pointer" : "not-allowed";
             
-            console.log(`Card: ${card.value} ${card.suit}`);
-            console.log(`  Card suit: ${getSuit(card)}`);
-            console.log(`  Is valid: ${isValid}`);
-            console.log(`  Should be opaque: ${isYourTurn && firstCardPlayed && !isValid}`);
-            console.log(`  Final opacity: ${opacity}`);
 
             if (data.cards_per_round == 1) {
-                handHTML += `<div class="card-back" style="cursor: ${cursor}; opacity: ${opacity};" onclick="${(isValid && isYourTurn && !isDelayPhase) ? `playCard('${card.code}')` : ''}" title="Hidden card"></div>`;
+                const cardClass = (isValid && isYourTurn && !isDelayPhase) ? 'card-back valid-card' : 'card-back invalid-card';
+                handHTML += `<div class="${cardClass}" style="cursor: ${cursor}; opacity: ${opacity};" onclick="${(isValid && isYourTurn && !isDelayPhase) ? `playCard('${card.code}')` : ''}" title="Hidden card"></div>`;
             } else {
+                const cardClass = (isValid && isYourTurn && !isDelayPhase) ? 'card-image valid-card' : 'card-image invalid-card';
                 handHTML += `
                     <img 
                         src="${card.image}" 
-                        class="card-image" 
+                        class="${cardClass}" 
                         onclick="${(isValid && isYourTurn && !isDelayPhase) ? `playCard('${card.code}')` : ''}"
                         style="opacity: ${opacity}; cursor: ${cursor};"
                         title="${card.value} of ${card.suit}"
